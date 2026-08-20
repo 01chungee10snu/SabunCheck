@@ -1,0 +1,3 @@
+# Gmail 동기화 스크립트/상태는 로컬 전용(공개 레포 제외)
+sync_members_from_gmail.py
+.gmail-sync-state.json
