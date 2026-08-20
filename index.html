@@ -41,7 +41,7 @@
 </div>
 <script>
 // ── 설정 ─────────────────────────────────────────────
-var SIGNUP_URL = "https://example.com/signup"; // TODO: 실제 회원가입 페이지 URL로 교체
+var SIGNUP_URL = "https://newtalk.hyundai-steel.com/sign-in/"; // 회원가입(사내메일 가입) 페이지
 var REDIRECT_SECONDS = 5;                      // 미가입 시 리다이렉트 대기 시간(초)
 // ─────────────────────────────────────────────────────
 
@@ -71,15 +71,6 @@ function loadMembers() {
   });
 }
 
-function maskAccount(acc) {
-  if (!acc || acc === "(계정 미기재)") return acc;
-  if (acc.indexOf("@") >= 0) {
-    var parts = acc.split("@");
-    return parts[0].slice(0, 2) + "***@" + parts[1];
-  }
-  if (acc.length <= 2) return acc.charAt(0) + "*";
-  return acc.slice(0, 2) + "*****";
-}
 
 function stopRedirect() {
   if (redirectTimer) { clearInterval(redirectTimer); redirectTimer = null; }
@@ -106,13 +97,14 @@ formEl.addEventListener("submit", function (e) {
       resultEl.innerHTML =
         "✅ <strong>가입되어 있습니다.</strong><br>" +
         "사번: " + val + "<br>" +
-        "계정: <span class='account'>" + maskAccount(m.get(val)) + "</span>";
+        "계정: <span class='account'>" + m.get(val) + "</span>";
     } else {
       resultEl.className = "result no";
       resultEl.innerHTML =
         "❌ <strong>쇠부리토크에 가입되어 있지 않습니다.</strong> (사번: " + val + ")<br>" +
-        "<span class='countdown' id='cd'>" + REDIRECT_SECONDS + "</span>초 후 회원가입 페이지로 이동합니다.<br>" +
-        "<a class='btn-inline' href='" + SIGNUP_URL + "'>지금 회원가입하기</a>";
+        "아래 페이지에서 <strong>사내메일 계정</strong>으로 가입해 주세요.<br>" +
+        "<span class='countdown' id='cd'>" + REDIRECT_SECONDS + "</span>초 후 이동합니다.<br>" +
+        "<a class='btn-inline' href='" + SIGNUP_URL + "'>지금 가입하기 (사내메일)</a>";
       var left = REDIRECT_SECONDS;
       redirectTimer = setInterval(function () {
         left--;
