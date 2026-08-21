@@ -32,7 +32,7 @@
 <body>
 <div class="card">
   <h1>쇠부리토크 가입 확인</h1>
-  <p class="desc">사번을 입력하면 쇠부리토크 가입 여부를 확인합니다.</p>
+  <p class="desc">사번을 입력하면 쇠부리토크 가입 여부와 가입해야 할 사내메일을 확인할 수 있습니다.</p>
   <form id="form" autocomplete="off">
     <input id="sabun" type="text" inputmode="numeric" placeholder="사번 입력" autocomplete="off" autofocus>
     <button type="submit">확인</button>
@@ -49,7 +49,7 @@ var CSV_URL = "members.csv?t=" + Date.now();
 var resultEl = document.getElementById("result");
 var formEl = document.getElementById("form");
 var inputEl = document.getElementById("sabun");
-var members = null;      // Map(사번 -> 계정)
+var members = null;      // Map(사번 -> {status, email})
 var redirectTimer = null;
 
 function loadMembers() {
@@ -63,9 +63,14 @@ function loadMembers() {
       if (!line) return;
       var sep = line.indexOf("|") >= 0 ? "|" : ",";
       var cols = line.split(sep).map(function (s) { return s.trim(); });
-      var sabun = cols[0], account = cols[1];
+      var sabun = cols[0];
       if (!sabun || sabun === "사번") return; // 헤더/빈 줄 스킵
-      if (!map.has(sabun)) map.set(sabun, account || "(계정 미기재)");
+      if (!map.has(sabun)) {
+        // 3열(사번|상태|메일) 신규 형식 — 구형 2열(사번|계정)도 호환
+        var status = cols.length >= 3 ? cols[1] : "joined";
+        var email = cols.length >= 3 ? cols[2] : (cols[1] || "");
+        map.set(sabun, { status: status, email: email });
+      }
     });
     return map;
   });
@@ -93,25 +98,37 @@ formEl.addEventListener("submit", function (e) {
   var p = members ? Promise.resolve(members) : loadMembers().then(function (m) { members = m; return m; });
   p.then(function (m) {
     if (m.has(val)) {
-      resultEl.className = "result ok";
-      resultEl.innerHTML =
-        "✅ <strong>가입되어 있습니다.</strong><br>" +
-        "사번: " + val + "<br>" +
-        "계정: <span class='account'>" + m.get(val) + "</span>";
+      var info = m.get(val);
+      if (info.status === "joined") {
+        // ── 가입자 ──
+        resultEl.className = "result ok";
+        resultEl.innerHTML =
+          "✅ <strong>가입되어 있습니다.</strong><br>" +
+          "사번: " + val + "<br>" +
+          "가입 계정: <span class='account'>" + info.email + "</span>";
+      } else {
+        // ── 가입 필요(미가입) ──
+        resultEl.className = "result no";
+        resultEl.innerHTML =
+          "❌ <strong>아직 가입되어 있지 않습니다.</strong> (사번: " + val + ")<br>" +
+          "이 사번의 가입 대상 사내메일은 <span class='account'>" + info.email + "</span> 입니다.<br>" +
+          "<strong>이 메일로 인증하여 가입</strong>해 주세요. (다른 메일로 가입하면 가입 처리되지 않습니다)<br>" +
+          "<span class='countdown' id='cd'>" + REDIRECT_SECONDS + "</span>초 후 회원가입 페이지로 이동합니다.<br>" +
+          "<a class='btn-inline' href='" + SIGNUP_URL + "'>지금 " + info.email + "(으)로 가입하기</a>";
+        var left = REDIRECT_SECONDS;
+        redirectTimer = setInterval(function () {
+          left--;
+          var cd = document.getElementById("cd");
+          if (cd) cd.textContent = left;
+          if (left <= 0) { stopRedirect(); window.location.href = SIGNUP_URL; }
+        }, 1000);
+      }
     } else {
-      resultEl.className = "result no";
+      // ── 명단에 없는 사번 ──
+      resultEl.className = "result err";
       resultEl.innerHTML =
-        "❌ <strong>쇠부리토크에 가입되어 있지 않습니다.</strong> (사번: " + val + ")<br>" +
-        "아래 페이지에서 <strong>사내메일 계정</strong>으로 가입해 주세요.<br>" +
-        "<span class='countdown' id='cd'>" + REDIRECT_SECONDS + "</span>초 후 이동합니다.<br>" +
-        "<a class='btn-inline' href='" + SIGNUP_URL + "'>지금 가입하기 (사내메일)</a>";
-      var left = REDIRECT_SECONDS;
-      redirectTimer = setInterval(function () {
-        left--;
-        var cd = document.getElementById("cd");
-        if (cd) cd.textContent = left;
-        if (left <= 0) { stopRedirect(); window.location.href = SIGNUP_URL; }
-      }, 1000);
+        "⚠️ <strong>입력한 사번이 명단에 없습니다.</strong> (사번: " + val + ")<br>" +
+        "사번을 다시 확인해 주세요. 계속 오류가 있으면 담당자에게 문의해 주세요.";
     }
   }).catch(function (err) {
     resultEl.className = "result err";
