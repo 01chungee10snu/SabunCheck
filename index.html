@@ -128,7 +128,8 @@ formEl.addEventListener("submit", function (e) {
       resultEl.className = "result err";
       resultEl.innerHTML =
         "⚠️ <strong>입력한 사번이 명단에 없습니다.</strong> (사번: " + val + ")<br>" +
-        "사번을 다시 확인해 주세요. 계속 오류가 있으면 담당자에게 문의해 주세요.";
+        "사번을 다시 확인해 주세요. 계속 오류가 있으면 아래 담당자에게 문의해 주세요.<br>" +
+        "<strong>컬처디자인팀 김태준 책임</strong> <span class='account'>031-510-2433</span>";
     }
   }).catch(function (err) {
     resultEl.className = "result err";
